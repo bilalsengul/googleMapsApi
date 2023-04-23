@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Google Maps Otomatik Tamamlama Örneği ve Detaylı Bilgi</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: space-evenly;
+      flex-wrap: wrap;
+    }
+    .container {
+      width: 49%;
+    }
+    .map {
+      height: 300px;
+      width: 100%;
+    }
+    .searchInput {
+      width: 100%;
+      padding: 10px;
+      font-size: 1.2em;
+    }
+    #directions-panel {
+      width: 100%;
+      padding: 10px;
+    }
+  </style>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDcr7LV8bIgdLGCyD89hEZvXzHLu98h27Q&libraries=places,directions"></script>
+<script>
+    let originPlace = null;
+    let destinationPlace = null;
+    let directionsService;
+    let directionsRenderer;
+
+    function initialize() {
+      directionsService = new google.maps.DirectionsService();
+      directionsRenderer = new google.maps.DirectionsRenderer();
+      
+      initializeMap('map1', 'searchInput1', 'suggestedLocations1', (place) => {
+        originPlace = place;
+        updateDirections();
+      });
+      initializeMap('map2', 'searchInput2', 'suggestedLocations2', (place) => {
+        destinationPlace = place;
+        updateDirections();
+      });
+
+      const directionsPanel = document.getElementById('directions-panel');
+      directionsRenderer.setPanel(directionsPanel);
+    }
+
+    function updateDirections() {
+      if (!originPlace || !destinationPlace) {
+        return;
+      }
+
+      const request = {
+        origin: originPlace.geometry.location,
+        destination: destinationPlace.geometry.location,
+        travelMode: google.maps.TravelMode.DRIVING,
+      };
+
+      directionsService.route(request, (result, status) => {
+        if (status === google.maps.DirectionsStatus.OK) {
+          directionsRenderer.setDirections(result);
+        } else {
+          console.error('Rota hesaplanamadı: ' + status);
+        }
+      });
+    }
+
+    function initializeMap(mapId, inputId, suggestedLocationsId, onPlaceSelected) {
+      const map = new google.maps.Map(document.getElementById(mapId), {
+        center: { lat: -33.8688, lng: 151.2195 },
+        zoom: 13,
+      });
+
+      directionsRenderer.setMap(map);
+
+      const input = document.getElementById(inputId);
+      const autocomplete = new google.maps.places.Autocomplete(input);
+
+      autocomplete.bindTo('bounds', map);
+      autocomplete.setFields(['address_components', 'formatted_address', 'geometry', 'icon', 'name']);
+
+      const marker = new google.maps.Marker({
+        map,
+        anchorPoint: new google.maps.Point(0, -29),
+      });
+
+      autocomplete.addListener('place_changed', () => {
+        marker.setVisible(false);
+        const place = autocomplete.getPlace();
+
+        if (!place.geometry) {
+          console.log("Giriş için ayrıntı yok: '" + place.name + "'");
+          return;
+        }
+
+        if (place.geometry.viewport) {
+          map.fitBounds(place.geometry.viewport);
+        } else {
+          map.setCenter(place.geometry.location);
+          map.setZoom(17);
+}
+marker.setPosition(place.geometry.location);
+    marker.setVisible(true);
+
+    showPlaceDetails(place, suggestedLocationsId);
+    onPlaceSelected(place);
+  });
+}
+
+function showPlaceDetails(place, suggestedLocationsId) {
+  const detailsContainer = document.getElementById(suggestedLocationsId);
+  detailsContainer.innerHTML = '';
+
+  const header = document.createElement('h3');
+  header.textContent = 'Yer Detayları';
+  detailsContainer.appendChild(header);
+
+  for (const component of place.address_components) {
+    const item = document.createElement('div');
+    item.textContent = `${getFriendlyLabel(component.types[0])}: ${component.long_name} (${component.short_name})`;
+    detailsContainer.appendChild(item);
+  }
+
+  const link = document.createElement('a');
+  link.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.formatted_address)}`;
+  link.target = '_blank';
+  link.textContent = 'Google Haritalar\'da Aç';
+  detailsContainer.appendChild(link);
+}
+
+function getFriendlyLabel(type) {
+  const labels = {
+    'street_number': 'Bina Numarası',
+    'route': 'Rota',
+    'locality': 'Şehir',
+    'administrative_area_level_1': 'İl',
+    'administrative_area_level_2': 'İlçe',
+    'administrative_area_level_4': 'Mahalle',
+    'country': 'Ülke',
+    'postal_code': 'Posta Kodu',
+    'sublocality': 'Mahalle',
+    'neighborhood': 'Semt',
+    'premise': 'Mülkiyet',
+  };
+
+  return labels[type] || type;
+}
+  </script>
+</head>
+<body onload="initialize()">
+  <div class="container">
+    <h1>Yükleme Alanı</h1>
+    <input id="searchInput1" class="searchInput" type="text" placeholder="Bir yer girin">
+    <div id="map1" class="map"></div>
+    <div id="suggestedLocations1"></div>
+  </div>
+  <div class="container">
+    <h1>Boşaltma Alanı</h1>
+    <input id="searchInput2" class="searchInput" type="text" placeholder="Bir yer girin">
+    <div id="map2" class="map"></div>
+    <div id="suggestedLocations2"></div>
+  </div>
+  <div id="directions-panel"></div>
+</body>
+</html>
