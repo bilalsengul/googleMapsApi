@@ -2,6 +2,8 @@
 
 This project is a simple example of how to use the Google Maps API to implement an autocomplete search bar and display detailed information about the selected location. It also provides driving directions between two selected locations.
 
+**Demo**: [https://bilalsengul.github.io/googleMapsApi/](https://bilalsengul.github.io/googleMapsApi/)
+
 ## Getting Started
 
 To use this project, you need to obtain a Google Maps API key from the [Google Cloud Console](https://console.cloud.google.com/). Once you have the key, replace `YOUR_API_KEY` in the script tag in the HTML file with your API key.
